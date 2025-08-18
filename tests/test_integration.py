@@ -2,7 +2,7 @@ import pytest
 from unittest.mock import AsyncMock, patch
 from app.services.posting_client import PostingServiceClient
 from app.models import TransactionRequest
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 
 @pytest.mark.asyncio
@@ -29,7 +29,7 @@ async def test_posting_service_integration(mock_get, mock_post):
         amount=123.45,
         currency="USD",
         description="Integration test transaction",
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)  # timezone-aware
     )
     
     # Test posting
@@ -58,7 +58,7 @@ async def test_posting_service_failure_handling(mock_post):
         amount=50.0,
         currency="USD",
         description="Failure test",
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)  # timezone-aware
     )
     
     success, error = await client.post_transaction(transaction)
@@ -89,7 +89,7 @@ async def test_idempotency_check(mock_get, mock_post):
         amount=99.99,
         currency="USD",
         description="Idempotency test",
-        timestamp=datetime.utcnow()
+        timestamp=datetime.now(timezone.utc)  # timezone-aware
     )
     
     success, error = await client.post_transaction(transaction)
