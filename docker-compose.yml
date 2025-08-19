@@ -1,14 +1,10 @@
-version: '3.8'
-
 services:
-  # Redis for queue and state management
   redis:
     image: redis:7-alpine
     ports:
       - "6379:6379"
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
 
-  # Mock posting service
   posting-service:
     image: vinhopenfabric/mock-posting-service:latest
     ports:
@@ -16,9 +12,8 @@ services:
     environment:
       - DB_PATH=/data/transactions.db
     volumes:
-      - posting_data:/data
+      - ./data:/data   # Use local folder instead of named volume
 
-  # Transaction processing service
   transaction-service:
     build: .
     ports:
@@ -32,6 +27,3 @@ services:
     volumes:
       - .:/app
     command: python run.py
-
-volumes:
-  posting_data:
