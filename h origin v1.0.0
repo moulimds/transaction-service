@@ -1,0 +1,27 @@
+[33m39a59c9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;33mtag: [m[1;33mv1.0.0[m[33m)[m Final testing and performance validation
+[33m10140f0[m[33m ([m[1;31morigin/main[m[33m)[m change
+[33mda0a8aa[m change
+[33mab731b2[m change
+[33me2ec9be[m change
+[33mab576df[m change
+[33me4b86a7[m change
+[33mf8ff2b5[m change
+[33m26ef370[m change
+[33m3e076e7[m change
+[33ma7610de[m Add pydantic-settings to requirements
+[33m2746d2a[m change
+[33m1bb2cbb[m change
+[33m7d46328[m change
+[33m86dda30[m change
+[33mc7861cd[m change
+[33md61dedb[m change
+[33m666c3d5[m change
+[33m99d149e[m change
+[33mb1bc78a[m change
+[33m13431e4[m change
+[33m4e6147e[m change
+[33m8fc3757[m minor change in time
+[33m0759243[m Project setup: requirements, config, models, env template, gitignore
+[33m73d84a3[m Project setup: requirements, config, models, env template, gitignore
+[33m6faa2e6[m Initial project structure and configuration
+[33m2b7007e[m Project setup: requirements, config, models, env template, gitignore
