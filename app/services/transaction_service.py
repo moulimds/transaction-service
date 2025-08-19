@@ -2,7 +2,7 @@ import json
 import redis
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timezone, timedelta
 from typing import Optional
 from app.models import TransactionRequest, TransactionResponse, TransactionStatus
 from app.config import settings
@@ -30,7 +30,7 @@ class TransactionService:
         self.redis_client.setex(dedup_key, 3600, "1")  # 1 hour TTL
         
         # Create transaction record
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         status_record = {
             "transactionId": transaction_id,
             "status": TransactionStatus.PENDING.value,
@@ -38,7 +38,7 @@ class TransactionService:
             "completedAt": None,
             "error": None,
             "retryCount": 0,
-            "transaction_data": transaction.dict()
+            "transaction_data": transaction.model_dump()  # Use model_dump instead of dict()
         }
         
         # Store status

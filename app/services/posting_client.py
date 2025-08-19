@@ -2,6 +2,7 @@ import httpx
 import asyncio
 import logging
 from typing import Optional, Dict, Any
+from datetime import datetime
 from app.config import settings
 from app.models import TransactionRequest
 
@@ -19,8 +20,14 @@ class PostingServiceClient:
         """
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
-                payload = transaction.dict()
-                payload["timestamp"] = payload["timestamp"].isoformat()
+                # Use model_dump instead of deprecated dict()
+                payload = transaction.model_dump()
+                
+                # Ensure timestamp is properly formatted
+                if isinstance(payload["timestamp"], datetime):
+                    payload["timestamp"] = payload["timestamp"].isoformat()
+                
+                logger.info(f"Posting transaction {transaction.id} to {self.base_url}/transactions")
                 
                 response = await client.post(
                     f"{self.base_url}/transactions",
@@ -28,7 +35,10 @@ class PostingServiceClient:
                     headers={"Content-Type": "application/json"}
                 )
                 
-                if response.status_code == 200:
+                logger.info(f"Posting service response: {response.status_code} - {response.text}")
+                
+                # Check for successful status codes (200, 201)
+                if response.status_code in [200, 201]:
                     logger.info(f"Successfully posted transaction {transaction.id}")
                     return True, None
                 else:
@@ -48,10 +58,15 @@ class PostingServiceClient:
         """
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
+                logger.info(f"Checking transaction {transaction_id} at {self.base_url}/transactions/{transaction_id}")
+                
                 response = await client.get(f"{self.base_url}/transactions/{transaction_id}")
                 
+                logger.info(f"Get transaction response: {response.status_code}")
+                
                 if response.status_code == 200:
-                    return True, response.json()
+                    data = await response.json()
+                    return True, data
                 elif response.status_code == 404:
                     return False, None
                 else:
@@ -66,8 +81,22 @@ class PostingServiceClient:
         """Cleanup all transactions (for testing)"""
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             try:
+                logger.info(f"Cleaning up posting service at {self.base_url}/cleanup")
                 response = await client.post(f"{self.base_url}/cleanup")
+                logger.info(f"Cleanup response: {response.status_code}")
                 return response.status_code == 200
             except Exception as e:
                 logger.error(f"Cleanup failed: {str(e)}")
+                return False
+    
+    async def test_connection(self) -> bool:
+        """Test connection to posting service"""
+        async with httpx.AsyncClient(timeout=self.timeout) as client:
+            try:
+                # Try to get transactions list first
+                response = await client.get(f"{self.base_url}/transactions")
+                logger.info(f"Connection test response: {response.status_code}")
+                return response.status_code in [200, 404]  # 404 is OK if no transactions
+            except Exception as e:
+                logger.error(f"Connection test failed: {str(e)}")
                 return False
