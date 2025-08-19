@@ -1,68 +1,37 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import FastAPI, HTTPException
+from pydantic import BaseModel
+from typing import Dict
 import logging
-import asyncio
-from contextlib import asynccontextmanager
 
-from app.api.routes import router
-from app.services.worker import TransactionWorker
-from app.config import settings
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Global worker instance
-worker = None
+app = FastAPI(title="Mock Posting Service")
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Application lifespan manager"""
-    global worker
-    
-    # Startup
-    logger.info("Starting Transaction Processing Service")
-    worker = TransactionWorker()
-    
-    # Start worker in background
-    worker_task = asyncio.create_task(worker.start())
-    
-    yield
-    
-    # Shutdown
-    logger.info("Shutting down Transaction Processing Service")
-    if worker:
-        worker.stop()
-        worker_task.cancel()
-        try:
-            await worker_task
-        except asyncio.CancelledError:
-            pass
+# In-memory storage for transactions
+transactions_db: Dict[str, dict] = {}
 
-# Create FastAPI app
-app = FastAPI(
-    title="High Performance Transaction Processing Service",
-    description="A reliable intermediary between clients and posting service",
-    version="1.0.0",
-    lifespan=lifespan
-)
+class TransactionRequest(BaseModel):
+    id: str
+    amount: float
+    timestamp: str
 
-# Add CORS middleware
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+@app.post("/transactions")
+async def create_transaction(transaction: TransactionRequest):
+    if transaction.id in transactions_db:
+        raise HTTPException(status_code=400, detail="Transaction already exists")
+    transactions_db[transaction.id] = transaction.dict()
+    logger.info(f"Transaction {transaction.id} stored successfully")
+    return {"message": "Transaction stored"}
 
-# Include routes
-app.include_router(router)
+@app.get("/transactions/{transaction_id}")
+async def get_transaction(transaction_id: str):
+    if transaction_id not in transactions_db:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    return transactions_db[transaction_id]
 
-@app.get("/")
-async def root():
-    return {"message": "Transaction Processing Service is running"}
+@app.post("/cleanup")
+async def cleanup_transactions():
+    transactions_db.clear()
+    logger.info("All transactions cleared")
+    return {"message": "All transactions cleared"}
