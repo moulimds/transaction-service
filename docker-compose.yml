@@ -1,23 +1,30 @@
+version: '3.9'
+
 services:
   redis:
     image: redis:7-alpine
+    container_name: transaction_service-redis
     ports:
       - "6379:6379"
     command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
 
   posting-service:
     image: vinhopenfabric/mock-posting-service:latest
+    container_name: transaction_service-posting-service
     ports:
       - "8080:8080"
     environment:
       - DB_PATH=/data/transactions.db
     volumes:
-      - ./data:/data   # Use local folder instead of named volume
+      - ./data:/data
+    restart: unless-stopped
 
   transaction-service:
     build: .
+    container_name: transaction_service-transaction-service
     environment:
-      - REDIS_URL=redis://redis:6379
+      - REDIS_URL=redis://redis:6379/0
       - POSTING_SERVICE_URL=http://posting-service:8080
     depends_on:
       - redis
@@ -25,3 +32,6 @@ services:
     volumes:
       - .:/app
     command: python run.py
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
