@@ -16,8 +16,6 @@ services:
 
   transaction-service:
     build: .
-    ports:
-      - "8000:8000"
     environment:
       - REDIS_URL=redis://redis:6379
       - POSTING_SERVICE_URL=http://posting-service:8080
